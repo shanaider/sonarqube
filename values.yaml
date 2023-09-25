@@ -1,0 +1,79 @@
+## Bitnami SonarQube&trade; image
+
+image:
+  registry: docker.io
+  repository: bitnami/sonarqube
+  tag: 10.2.0-debian-11-r0
+  pullPolicy: IfNotPresent
+
+## @section SonarQube&trade; Configuration parameters
+sonarqubeUsername: admin
+sonarqubePassword: "admin"
+provisioningFolder: "/bitnami/sonarqube-provisioning"
+replicaCount: 1
+
+## @section Traffic Exposure Parameters
+##
+service:
+  type: ClusterIP
+  ports:
+    http: 80
+    elastic: 9001
+
+## @section Persistence Parameters
+persistence:
+  enabled: true
+  existingClaim: "pvc-sonarqube"
+  # storageClass: "{storage_class_name}"
+  # accessModes:
+  #   - ReadWriteOnce
+  # size: 10G
+
+initContainers:
+ - name: chmod-container
+   image: bitnami/os-shell:11-debian-11-r57
+   imagePullPolicy: IfNotPresent
+   command: ['sh', '-c', 'mkdir -p /opt/bitnami/sonarqube/extensions/downloads && chmod -R 775 /opt/bitnami/sonarqube/extensions']
+   securityContext:
+     privileged: true
+     runAsUser: 0
+   volumeMounts:
+   - name: sonarqube
+     mountPath: /opt/bitnami/sonarqube/extensions
+     subPath: extensions
+
+## Enable diagnostic mode in the deployment
+##
+diagnosticMode:
+  ## @param diagnosticMode.enabled Enable diagnostic mode (all probes will be disabled and the command will be overridden)
+  ##
+  enabled: false
+
+
+## 'volumePermissions' init container parameters
+volumePermissions:
+  enabled: true
+
+## @section PostgreSQL subchart settings
+##
+postgresql:
+  enabled: true
+  auth:
+    password: "password"
+    username: bn_sonarqube
+    database: bitnami_sonarqube
+  primary:
+    persistence:
+      enabled: true
+      existingClaim: "pvc-sonarqube-posegres"
+      # storageClass: "{storage_class_name}"
+      # accessMode: ReadWriteOnce
+      # size: 10Gi
+      
+## Service account for PostgreSQL to use.
+  serviceAccount:
+    create: true
+    name: "sonarqube-postgres"
+  ## 'volumePermissions' init container parameters  
+  volumePermissions:
+    enabled: true
